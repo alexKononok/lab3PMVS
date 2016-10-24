@@ -41,6 +41,32 @@ int main(int argc, char *argv[])
 		error("ERROR on binding");
 	listen(sockfd, 100);
 	clilen = sizeof(cli_addr);
+	while (1)
+	{
+		newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+		if (newsockfd < 0)
+			error("ERROR on accept1");
+
+#ifndef THREAD 
+		pid = fork();
+		if (pid < 0)
+			error("ERROR on accept2");
+		if (pid == 0)
+		{
+			close(sockfd);
+			dostuff(&newsockfd);
+			exit(0);
+		}
+		else
+			close(newsockfd);
+
+#else
+		{
+			pthread_t tid;
+			pthread_create(&tid, NULL, &dostuff, &newsockfd);
+		}
+#endif
+	}
 	close(sockfd);
 	return 0;
 }
