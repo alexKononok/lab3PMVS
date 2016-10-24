@@ -77,3 +77,40 @@ void error(const char *msg)
 	exit(1);
 }
 
+void* dostuff(void *voidsockfd)
+{
+	int sockfd = *((int *)(voidsockfd));
+	int n, i, datafilefd, filesize, msgnumber, bytesread;
+	char filename[BUF_SIZE], buffer[BUF_SIZE];
+	struct stat st;
+
+	bzero(filename, BUF_SIZE);
+	n = read(sockfd, filename, BUF_SIZE - 1);
+	void* dostuff(void*);
+	if (n < 0) 
+		error("ERROR reading from socket");
+	filename[strlen(filename) - 1] = '\0';
+	datafilefd = open(filename, O_RDONLY);
+	if (datafilefd == -1)
+	{
+		n = write(sockfd, &datafilefd, sizeof(int));
+		if (n < 0)
+			error("ERROR writing to socket");
+		return NULL;
+	}
+	fstat(datafilefd, &st);
+	filesize = st.st_size;
+	msgnumber = filesize / (BUF_SIZE - 1) + (filesize % (BUF_SIZE - 1) > 0 ? 1 : 0);
+	n = write(sockfd, &msgnumber, sizeof(int));
+	if (n < 0)
+		error("ERROR writing to socket");
+	for (i = 0; i < msgnumber; i++)
+	{
+		bytesread = read(datafilefd, buffer, BUF_SIZE - 1);
+		n = write(sockfd, buffer, bytesread);
+		if (n < 0)
+			error("ERROR writing to socket");
+	}
+	close(datafilefd);
+	return NULL;
+}
