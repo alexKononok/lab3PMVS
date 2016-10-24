@@ -42,7 +42,39 @@ int main(int argc, char *argv[])
 		(char *)&serv_addr.sin_addr.s_addr,
 		server->h_length);
 	serv_addr.sin_port = htons(portno);
-	
+
+	if (connect(sockfd,(struct sockaddr *) &serv_addr,
+		sizeof(serv_addr)) < 0) 
+		error("ERROR connecting");
+	printf("Enter the name of file you want to download: ");
+	bzero(filename, 256);
+	fgets(filename, 255, stdin);
+	n = write(sockfd, filename, 255);
+	if (n < 0) 
+		error("ERROR writing to socket");
+	bzero(buffer,256);
+	n = read(sockfd, &msgnumber, sizeof(int));
+	if (n < 0) 
+		error("ERROR reading from socket");
+	if (msgnumber == -1)
+	{
+		printf("File you want does not exist\n");
+		return 0;
+	}
+	filename[strlen(filename) - 1] = '1';
+	outfd = open(filename, O_WRONLY | O_CREAT | O_TRUNC, 0666);
+	printf("Downloading file...\n");
+	for (i = 0; i < msgnumber; i++)
+	{
+		n = read(sockfd, buffer, BUF_SIZE - 1);
+		if (n < 0)
+			error("ERROR reading from socket");
+		write(outfd, buffer, n);
+	}
+	printf("Downloaded successfully to %s.\n", filename);
+	close(outfd);
+	close(sockfd);	
+
 	return 0;
 }
 
